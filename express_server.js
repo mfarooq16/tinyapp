@@ -6,7 +6,6 @@ const bodyParser = require("body-parser");
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 
-
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -35,6 +34,11 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = req.body.longURL;// the POST request body added to the urlDatabase
   res.redirect(`/urls/:${shortURL}`) // Redirects to where the short url is generated 
 });
+
+app.post('/urls/:shortURL/delete', (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  res.redirect("/urls");
+})
 
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
