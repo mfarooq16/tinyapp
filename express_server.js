@@ -102,6 +102,12 @@ app.post("/logout", (req, res) => {
   res.redirect('/urls');  
 });
 
+//Create a GET /register endpoint, which returns the register template you just created.
+app.get("/register", (req, res) => {
+  let templateVars = {username: req.cookies['username']};
+  res.render("urls_register", templateVars);
+});
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
