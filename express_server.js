@@ -12,6 +12,36 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
+const checkEmail = function(email) {
+  for (const id in users) {
+    console.log(users[id].email, email );
+    if (users[id].email === email) {
+      return id;
+    }
+  }
+}
+/*
+const checkPassword =function  (passowrd) {
+  for (const id in users) {
+    if (users[id].password === passowrd)
+    return true;
+  }
+  return false;
+}*/
+
 const generateRandomString = function()  {
   let r = Math.random().toString(36).substring(7);
   return r;
@@ -29,7 +59,7 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls", (req, res) => {
   let templateVars = { 
     urls: urlDatabase,
-    username: req.cookies["username"]
+    user: users[req.cookies["userID"]]
   };
   res.render("urls_index", templateVars);
 });
@@ -37,7 +67,7 @@ app.get("/urls", (req, res) => {
 //route handler for new urls form
 app.get("/urls/new", (req, res) => {
   let templateVars = { 
-    username: req.cookies["username"]
+    user: users[req.cookies["userID"]]
   }
   res.render("urls_new", templateVars);
 });
@@ -47,7 +77,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies["username"]
+    user: users[req.cookies["userID"]]
   };
   res.render("urls_show", templateVars);
 });
@@ -79,7 +109,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 app.get('/urls/:shortURL/edit', (req, res) => {
   let templateVars = { 
     shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies["username"]
+    user: users[req.cookies["userID"]]
    };
   shortURL = req.params.shortURL;
   res.redirect(`/urls/${shortURL}`);
@@ -98,14 +128,47 @@ app.post('/login', (req, res) => {
 
 //an endpoint to handle a POST to /logout in your Express server
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('userID');
   res.redirect('/urls');  
 });
 
 //Create a GET /register endpoint, which returns the register template you just created.
 app.get("/register", (req, res) => {
-  let templateVars = {username: req.cookies['username']};
+  let templateVars = {user: users[req.cookies["userID"]]};
   res.render("urls_register", templateVars);
+});
+
+//Create a POST /register endpoint
+/*app.post('/register', (req, res) => {
+  const userID = generateRandomString();
+  users[userID] = {
+    id: userID,
+    email: req.body.email,
+    password: req.body.password
+  };
+  res.cookie('userID', userID);
+  res.redirect("/urls");
+});
+*/
+app.post('/register', (req, res) => {
+  if (req.body.email) {
+    if (!(checkEmail(req.body.email))) {
+      const userID = generateRandomString();
+      users[userID] = {
+        id: userID,
+        email: req.body.email,
+        password: req.body.password
+      };
+      res.cookie('userID', userID);
+      res.redirect('/urls');
+    } else {
+      res.status(400).send('<html><body><h3>This email already exist in our database!</h3></body></html>')
+    }
+
+  } else {
+    res.status(400).send('<html><body><h3>Please enter your email</h3></body></html>');
+  }
+
 });
 
 app.listen(PORT, () => {
