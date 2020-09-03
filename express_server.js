@@ -12,40 +12,40 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
+};
 
 const checkEmail = function(email) {
   for (const id in users) {
-    console.log(users[id].email, email );
+    console.log(users[id].email, email);
     if (users[id].email === email) {
       return id;
     }
   }
-}
-/*
-const checkPassword =function  (passowrd) {
+};
+
+const checkPassword = function(passowrd) {
   for (const id in users) {
     if (users[id].password === passowrd)
-    return true;
+      return true;
   }
   return false;
-}*/
+};
 
 const generateRandomString = function()  {
   let r = Math.random().toString(36).substring(7);
   return r;
-}
+};
 
 // use res.render to load up an ejs view file
 app.get("/", (req, res) => {
@@ -57,7 +57,7 @@ app.get("/urls.json", (req, res) => {
 
 //route handler for urls
 app.get("/urls", (req, res) => {
-  let templateVars = { 
+  let templateVars = {
     urls: urlDatabase,
     user: users[req.cookies["userID"]]
   };
@@ -66,9 +66,9 @@ app.get("/urls", (req, res) => {
 
 //route handler for new urls form
 app.get("/urls/new", (req, res) => {
-  let templateVars = { 
+  let templateVars = {
     user: users[req.cookies["userID"]]
-  }
+  };
   res.render("urls_new", templateVars);
 });
 
@@ -86,50 +86,13 @@ app.get("/urls/:shortURL", (req, res) => {
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;// the POST request body added to the urlDatabase
-  res.redirect(`/urls/:${shortURL}`) // Redirects to where the short url is generated 
+  res.redirect(`/urls/:${shortURL}`); // Redirects to where the short url is generated
 });
 
 // route handler for Redirecting any request to "/u/:shortURL" to its longURL
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]
+  const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
-});
-
-//route handler POST that removes a URL resource
-app.get('/urls/:shortUrl/delete', (req, res) => {
-  res.render('urls_index');
-});
-
-app.post('/urls/:shortURL/delete', (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
-});
-
-//route handler POST that updates a URL resource
-app.get('/urls/:shortURL/edit', (req, res) => {
-  let templateVars = { 
-    shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL],
-    user: users[req.cookies["userID"]]
-   };
-  shortURL = req.params.shortURL;
-  res.redirect(`/urls/${shortURL}`);
-});
-
-app.post('/urls/:shortURL/edit', (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.editedLongURL;
-  res.redirect('/urls');
-});
-
-//an endpoint to handle a POST to /login in your Express server
-app.post('/login', (req, res) => {
-  res.cookie('username', req.body.username);
-  res.redirect('/urls');
-});
-
-//an endpoint to handle a POST to /logout in your Express server
-app.post("/logout", (req, res) => {
-  res.clearCookie('userID');
-  res.redirect('/urls');  
 });
 
 //Create a GET /register endpoint, which returns the register template you just created.
@@ -150,6 +113,7 @@ app.get("/register", (req, res) => {
   res.redirect("/urls");
 });
 */
+
 app.post('/register', (req, res) => {
   if (req.body.email) {
     if (!(checkEmail(req.body.email))) {
@@ -159,17 +123,69 @@ app.post('/register', (req, res) => {
         email: req.body.email,
         password: req.body.password
       };
+      console.log(users);
       res.cookie('userID', userID);
       res.redirect('/urls');
     } else {
-      res.status(400).send('<html><body><h3>This email already exist in our database!</h3></body></html>')
+      res.sendStatus(400);
     }
 
   } else {
-    res.status(400).send('<html><body><h3>Please enter your email</h3></body></html>');
+    res.sendStatus(400);
   }
 
 });
+
+//route handler POST that removes a URL resource
+app.get('/urls/:shortUrl/delete', (req, res) => {
+  res.render('urls_index');
+});
+
+app.post('/urls/:shortURL/delete', (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  res.redirect("/urls");
+});
+
+//route handler POST that updates a URL resource
+app.get('/urls/:shortURL/edit', (req, res) => {
+  let templateVars = {
+    shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL],
+    user: users[req.cookies["userID"]]
+  };
+  let shortURL = req.params.shortURL;
+  res.redirect(`/urls/${shortURL}`, templateVars);
+});
+
+app.post('/urls/:shortURL/edit', (req, res) => {
+  urlDatabase[req.params.shortURL] = req.body.editedLongURL;
+  res.redirect('/urls');
+});
+
+//Create a GET /login endpoint, which returns the login template
+app.get("/login", (req, res) => {
+  let templateVars = {user: users[req.cookies["userID"]]};
+  res.render('urls_login', templateVars);
+});
+
+//an endpoint to handle a POST to /login in your Express server
+app.post('/login', (req, res) => {
+  if (req.body.email) {
+    if (!(checkEmail(req.body.email))) {
+      res.sendStatus(400);
+    } else if (!(checkPassword(req.body.password))) {
+      res.sendStatus(400);
+    } else {
+      res.redirect('/urls');
+    }
+  }
+});
+
+//an endpoint to handle a POST to /logout in your Express server
+app.post("/logout", (req, res) => {
+  res.clearCookie('userID');
+  res.redirect('/urls');
+});
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
