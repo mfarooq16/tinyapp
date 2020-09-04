@@ -8,8 +8,8 @@ app.use(cookieParser()); // execute cookie parser
 app.set("view engine", "ejs"); // set the template/view engine to ejs
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
 const users = {
@@ -76,14 +76,14 @@ app.get("/urls/new", (req, res) => {
 // *route handler for generating a shortURL and adding that to the urlDatabase
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;// the POST request body added to the urlDatabase
+  urlDatabase[shortURL] = {longURL: req.body.longURL, userID: req.cookies.userID};// the POST request body added to the urlDatabase
   //res.redirect(`/urls/:${shortURL}`); // Redirects to where the short url is generated
   res.redirect('/urls')
 });
 
 // *route handler for Redirecting any request to "/u/:shortURL" to its longURL
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
@@ -91,7 +91,7 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urlDatabase[req.params.shortURL].longURL,
     user: users[req.cookies["userID"]]
   };
   res.render("urls_show", templateVars);
@@ -111,7 +111,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 //route handler POST that updates a URL resource
 app.get('/urls/:shortURL/edit', (req, res) => {
   let templateVars = {
-    shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL],
+    shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL,
     user: users[req.cookies['userID']]
   };
   let shortURL = req.params.shortURL;
