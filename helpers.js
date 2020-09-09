@@ -37,7 +37,7 @@ const checkPassword = function(passowrd) {
   return match;
 };
 
-const checkUserID = function(email) {
+const checkUserID = function(email, users) {
   let userID = "";
   for (let user in users) {
     let userInfo = users[user];
