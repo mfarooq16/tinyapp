@@ -50,9 +50,9 @@ GET / - if user is logged in: (Minor) redirect to /urls, if user is not logged i
 app.get("/", (req, res) => {
   //res.send("Hello");
   if (!req.session.user_id) {
-    res.redirect ("/login");
+    res.redirect("/login");
   } else {
-    res.redirect ("/urls");
+    res.redirect("/urls");
   }
 });
 
@@ -67,7 +67,7 @@ app.get("/urls", (req, res) => {
     user: users[req.session.user_id]
   };
   res.render("urls_index", templateVars);
-*/  
+*/
   if (!req.session.user_id) {
     res.redirect('/login');
   } else {
@@ -76,13 +76,13 @@ app.get("/urls", (req, res) => {
     let userUrlDB = {};
     for (let shortURL in urlDatabase) {
       if (urlDatabase[shortURL].userID === req.session.user_id) {
-        userUrlDB[shortURL]= urlDatabase[shortURL].longURL;
+        userUrlDB[shortURL] = urlDatabase[shortURL].longURL;
       }
     }
 
     let templateVars = { urls: userUrlDB, user: users[req.session.user_id] };
 
-    res.render("urls_index", templateVars);  
+    res.render("urls_index", templateVars);
   }
 });
 
@@ -93,7 +93,7 @@ GET /urls/new - if user is not logged in: returns HTML with a relevant error mes
 app.get("/urls/new", (req, res) => {
 
   if (!req.session.user_id) {
-    res.redirect ("/login");
+    res.redirect("/login");
   } else {
     let templateVars = {
       user: users[req.session.user_id]
