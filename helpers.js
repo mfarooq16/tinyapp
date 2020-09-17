@@ -33,34 +33,29 @@ const urlsForUser = function(id) {
   return urls;
 };
 
-const checkEmail = function(email) {
-  let userExists = false;
+const checkEmail = function(email, users) {
   for (let user in users) {
-    let userInfo = users[user];
-    if (userInfo['email'] === email) {
-      userExists = true;
+    if (users[user].email === email) {
+      return true;
     }
   }
-  return userExists;
+  return false;
 };
 
-const checkPassword = function(passowrd) {
-  let match = false;
+const checkPassword = function(password, users) {
   for (let user in users) {
-    let userInfo = users[user];
-    if (bcrypt.compareSync(password, userInfo['password'])) {
-      match = true;
+    if (bcrypt.compareSync(password, users[user].password)) {
+      return true;
     }
   }
-  return match;
+  return false;
 };
 
 const checkUserID = function(email, users) {
   let userID = "";
   for (let user in users) {
-    let userInfo = users[user];
-    if (userInfo['email'] === email) {
-      userID = userInfo['id'];
+    if (users[user].email === email) {
+      userID = users[user].id;
     }
   }
   return userID;

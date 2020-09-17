@@ -1,7 +1,7 @@
-const express = require("express"); // require express
+const express = require('express'); // require express
 const app = express(); // execute express
 const PORT = 8080; //default port
-const bodyParser = require("body-parser"); // require bodyparser
+const bodyParser = require('body-parser'); // require bodyparser
 const bcrypt = require('bcrypt'); //require bcrypt
 const saltRounds = 10;
 const cookieSession = require('cookie-session');
@@ -14,7 +14,7 @@ app.use(
 );
 app.use(bodyParser.urlencoded({extended: true})); // execute badyparser
 
-app.set("view engine", "ejs"); // set the template/view engine to ejs
+app.set('view engine', 'ejs'); // set the template/view engine to ejs
 
 const {
   generateRandomString,
@@ -26,33 +26,33 @@ const {
 
 
 const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+  b6UTxQ: { longURL: 'https://www.tsn.ca', userID: 'aJ48lW' },
+  i3BoGr: { longURL: 'https://www.google.ca', userID: 'aJ48lW' }
 };
 
 const users = {
-  "userRandomID": {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+  'userRandomID': {
+    id: 'userRandomID',
+    email: 'user@example.com',
+    password: 'purple-monkey-dinosaur'
   },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
+  'user2RandomID': {
+    id: 'user2RandomID',
+    email: 'user2@example.com',
+    password: 'dishwasher-funk'
   }
 };
 
 // use res.render to load up an ejs view file
 /*
-GET / - if user is logged in: (Minor) redirect to /urls, if user is not logged in: (Minor) redirect to /login -> user stays on / with a "Hello" message
+GET / - if user is logged in: (Minor) redirect to /urls, if user is not logged in: (Minor) redirect to /login -> user stays on / with a 'Hello' message
 */
-app.get("/", (req, res) => {
-  //res.send("Hello");
+app.get('/', (req, res) => {
+  //res.send('Hello');
   if (!req.session.user_id) {
-    res.redirect("/login");
+    res.redirect('/login');
   } else {
-    res.redirect("/urls");
+    res.redirect('/urls');
   }
 });
 
@@ -60,14 +60,7 @@ app.get("/", (req, res) => {
 /*
 GET /urls - if user is not logged in: returns HTML with a relevant error message -> users who are not logged in are able to access this page
 */
-app.get("/urls", (req, res) => {
-/*
-  let templateVars = {
-    urls: urlsForUser(req.session.user_id),
-    user: users[req.session.user_id]
-  };
-  res.render("urls_index", templateVars);
-*/
+app.get('/urls', (req, res) => {
   if (!req.session.user_id) {
     res.redirect('/login');
   } else {
@@ -82,7 +75,7 @@ app.get("/urls", (req, res) => {
 
     let templateVars = { urls: userUrlDB, user: users[req.session.user_id] };
 
-    res.render("urls_index", templateVars);
+    res.render('urls_index', templateVars);
   }
 });
 
@@ -90,32 +83,32 @@ app.get("/urls", (req, res) => {
 /*
 GET /urls/new - if user is not logged in: returns HTML with a relevant error message -> users who are not logged in are able to access this page
 */
-app.get("/urls/new", (req, res) => {
+app.get('/urls/new', (req, res) => {
 
   if (!req.session.user_id) {
-    res.redirect("/login");
+    res.redirect('/login');
   } else {
     let templateVars = {
       user: users[req.session.user_id]
     };
-    res.render("urls_new", templateVars);
+    res.render('urls_new', templateVars);
   }
 
 });
 
 // an endpoint to handle a POST to /login in your Express server
 /*
-POST /login - if email and password params don't match an existing user: returns HTML with a relevant error message -> user is redirected to /register with the message "Bad request"
+POST /login - if email and password params don't match an existing user: returns HTML with a relevant error message -> user is redirected to /register with the message 'Bad request'
 */
 app.post('/login', (req, res) => {
-  const userEmail = checkEmail(req.body.email);
-  const userPassword = checkPassword(req.body.passowrd);
+  const userEmail = checkEmail(req.body.email, users);
+  const userPassword = checkPassword(req.body.passowrd, users);
 
   if (!userEmail) {
     res.sendStatus(400);
-  } else if (userEmail) {
+  } else {
     if (userPassword) {
-      req.session.user_id = checkUserID(req.body.email);
+      req.session.user_id = checkUserID(req.body.email, users);
       res.redirect('/urls');
     } else {
       res.redirect('/login');
@@ -128,8 +121,9 @@ app.post('/login', (req, res) => {
 POST /register - if email or password are empty: returns HTML with a relevant error message, if email already exists: returns HTML with a relevant error message -> same as above
 */
 app.post('/register', (req, res) => {
-
-  if (req.body.email === '' || req.body.password === '' || checkEmail(req.body.email)) {
+  let email = req.body.email;
+  let password = req.body.password;
+  if (!email || !password || checkEmail(req.body.email, users)) {
 
     res.sendStatus(400);
 
@@ -142,7 +136,7 @@ app.post('/register', (req, res) => {
       password: bcrypt.hashSync(req.body.password , saltRounds)
     };
 
-    //console.log(users);
+    console.log(users);
     req.session.user_id = userID;
     res.redirect('/urls');
   }
@@ -152,28 +146,41 @@ app.post('/register', (req, res) => {
 GET /login & GET /register - if user is logged in: (Minor) redirects to /urls -> user is able to access these pages while logged in with no redirect
 */
 // Create a GET /login endpoint, which returns the login template
-app.get("/login", (req, res) => {
-  let templateVars = {
-    user: users[req.session.user_id]
-  };
-
-  res.render("urls_login", templateVars);
-
+app.get('/login', (req, res) => {
+  /*
+  const user = req.session.user_id
+  if (!user) {
+    res.render ('urls_login');
+  } else { 
+    res.redirect ('/urls');
+  }
+  */
+ let templateVars = {
+  user: users[req.session.user_id]
+};
+res.render('urls_login', templateVars);
 });
 
 // Create a GET /register endpoint, which returns the register template you just created
-app.get("/register", (req, res) => {
-  let templateVars = {
-    user: users[req.session.user_id]
-  };
+app.get('/register', (req, res) => {
+  /*
+  if (!req.session.user_id) {
+    res.render ('urls_register');
+  } else {
+    res.redirect('/urls');
+  }
+  */
+ let templateVars = {
+  user: users[req.session.user_id]
+};
 
-  res.render("urls_register", templateVars);
+res.render('urls_register', templateVars);
 
 });
 
 // an endpoint to handle a POST to /logout in your Express server*
-app.post("/logout", (req, res) => {
-  req.session.user_id = null;
+app.post('/logout', (req, res) => {
+  req.session = null;
   res.redirect('/login');
 });
 
@@ -184,34 +191,38 @@ app.post("/logout", (req, res) => {
 /*
 GET /urls/:id - if a URL for the given ID does not exist: (Minor) returns HTML with a relevant error message -> user is shown the express error page with message TypeError: Cannot read property 'longURL' of undefined
 */
-app.get("/urls/:shortURL", (req, res) => {
+app.get('/urls/:shortURL', (req, res) => {
 
-  let templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    id: urlDatabase[req.params.shortURL]['userID'],
-    user: users[req.session.user_id]
-  };
-  
-  res.render('urls_show', templateVars);
+  if (!req.session.user_id) {
+    res.redirect('/login')
+  } else {
+    let templateVars = {
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL].longURL,
+      id: urlDatabase[req.params.shortURL]['userID'],
+      user: users[req.session.user_id]
+    };
+
+    res.render('urls_show', templateVars);
+  }
 
 });
 
-// route handler for Redirecting any request to "/u/:shortURL" to its longURL
+// route handler for Redirecting any request to '/u/:shortURL' to its longURL
 /*
 GET /urls/:id - if a URL for the given ID does not exist: (Minor) returns HTML with a relevant error message -> user is shown the express error page with message TypeError: Cannot read property 'longURL' of undefined
 GET /u/:id - same as above
 */
-app.get("/u/:shortURL", (req, res) => {
+app.get('/u/:shortURL', (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
 // route handler for generating a shortURL and adding that to the urlDatabase
 /*
-POST /urls - if user is not logged in: (Minor) returns HTML with a relevant error message -> user is given express error page with message "TypeError: Cannot read property 'id' of undefined"
+POST /urls - if user is not logged in: (Minor) returns HTML with a relevant error message -> user is given express error page with message 'TypeError: Cannot read property 'id' of undefined'
 */
-app.post("/urls", (req, res) => {
+app.post('/urls', (req, res) => {
 
   if (!req.session.user_id) {
     res.redirect('/login');
@@ -241,12 +252,10 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   if (urlDatabase[req.params.shortURL].userID === req.session.user_id) {
 
     delete urlDatabase[req.params.shortURL];
-    res.redirect("/urls");
+    res.redirect('/urls');
 
   } else {
-
     res.redirect('/login');
-
   }
   
 });
@@ -265,17 +274,16 @@ app.get('/urls/:shortURL/edit', (req, res) => {
 });
 
 app.post('/urls/:shortURL/edit', (req, res) => {
-  const userID = req.session.user_id;
 
-  if (urlDatabase[req.params.shortURL].userID === userID) {
-
-    urlDatabase[req.params.shortURL] = {longURL, userID };
+  if (urlDatabase[req.params.shortURL].userID === req.session.user_id) {
+    urlDatabase[req.params.shortURL] = {
+      longURL: urlDatabase[req.params.shortURL].longURL, 
+      userID: req.session.user_id
+    };
     res.redirect('/urls');
 
   } else {
-
-    res.send('<html><body><h2>Access forbidden </h2></body></html>');
-
+    res.send('<html><body><h2>Access forbidden</h2></body></html>');
   }
 
 });

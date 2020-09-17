@@ -14,14 +14,14 @@
     </div>
 
     <div class="nav navbar-nav ml-auto">
-      <% if (user) {%>
+      <!--<% if (user) { %>-->
         <form class="form-inline" action="/logout" method="POST">
           <div class="form-group mb-2">
             <label for="userID">Logged In As: <%= user.email %>  </label>
             <button type="submit" class="btn btn-primary" style="margin-left: 10px;">Logout</button>
           </div>
         </form> 
-      <% } %>
+      <!--<% } %>-->
     </div>
   </nav>
 </header>
