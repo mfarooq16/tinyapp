@@ -13,7 +13,6 @@ app.use(
   })
 );
 app.use(bodyParser.urlencoded({extended: true})); // execute badyparser
-
 app.set('view engine', 'ejs'); // set the template/view engine to ejs
 
 const {
@@ -23,7 +22,8 @@ const {
   checkPassword,
   checkUserID
 } = require('./helpers');
-
+const passowrd1 = bcrypt.hashSync("purple-monkey-dinosaur", 10);
+const passowrd2 = bcrypt.hashSync('dishwasher-funk', 10);
 
 const urlDatabase = {
   b6UTxQ: { longURL: 'https://www.tsn.ca', userID: 'aJ48lW' },
@@ -34,22 +34,17 @@ const users = {
   'userRandomID': {
     id: 'userRandomID',
     email: 'user@example.com',
-    password: 'purple-monkey-dinosaur'
+    password: passowrd1
   },
   'user2RandomID': {
     id: 'user2RandomID',
     email: 'user2@example.com',
-    password: 'dishwasher-funk'
+    password: passowrd2
   }
 };
 
-// use res.render to load up an ejs view file
-/*
-GET / - if user is logged in: (Minor) redirect to /urls, if user is not logged in: (Minor) redirect to /login -> user stays on / with a 'Hello' message
-*/
 app.get('/', (req, res) => {
-  //res.send('Hello');
-  if (!req.session.user_id) {
+  if (!req.session.userID) {
     res.redirect('/login');
   } else {
     res.redirect('/urls');
@@ -57,39 +52,31 @@ app.get('/', (req, res) => {
 });
 
 // route handler for urls
-/*
-GET /urls - if user is not logged in: returns HTML with a relevant error message -> users who are not logged in are able to access this page
-*/
 app.get('/urls', (req, res) => {
-  if (!req.session.user_id) {
+  if (!req.session.userID) {
     res.redirect('/login');
   } else {
   
     //filter the urls of the user
     let userUrlDB = {};
     for (let shortURL in urlDatabase) {
-      if (urlDatabase[shortURL].userID === req.session.user_id) {
-        userUrlDB[shortURL] = urlDatabase[shortURL].longURL;
+      if (urlDatabase[shortURL].userID === req.session.userID) {
+        userUrlDB[shortURL] = urlDatabase[shortURL];
       }
     }
-
-    let templateVars = { urls: userUrlDB, user: users[req.session.user_id] };
-
+    let templateVars = { urls: userUrlDB, user: users[req.session.userID] };
     res.render('urls_index', templateVars);
   }
 });
 
 // route handler for new urls form
-/*
-GET /urls/new - if user is not logged in: returns HTML with a relevant error message -> users who are not logged in are able to access this page
-*/
 app.get('/urls/new', (req, res) => {
 
-  if (!req.session.user_id) {
+  if (!req.session.userID) {
     res.redirect('/login');
   } else {
     let templateVars = {
-      user: users[req.session.user_id]
+      user: users[req.session.userID]
     };
     res.render('urls_new', templateVars);
   }
@@ -97,18 +84,16 @@ app.get('/urls/new', (req, res) => {
 });
 
 // an endpoint to handle a POST to /login in your Express server
-/*
-POST /login - if email and password params don't match an existing user: returns HTML with a relevant error message -> user is redirected to /register with the message 'Bad request'
-*/
 app.post('/login', (req, res) => {
   const userEmail = checkEmail(req.body.email, users);
-  const userPassword = checkPassword(req.body.passowrd, users);
-
+  const userPassword = checkPassword(req.body.password, users);
+  //console.log(userEmail)
+  //console.log(users);
   if (!userEmail) {
     res.sendStatus(400);
   } else {
     if (userPassword) {
-      req.session.user_id = checkUserID(req.body.email, users);
+      req.session.userID = checkUserID(req.body.email, users);
       res.redirect('/urls');
     } else {
       res.redirect('/login');
@@ -117,65 +102,36 @@ app.post('/login', (req, res) => {
 });
 
 // Create a POST /register endpoint
-/*
-POST /register - if email or password are empty: returns HTML with a relevant error message, if email already exists: returns HTML with a relevant error message -> same as above
-*/
 app.post('/register', (req, res) => {
-  let email = req.body.email;
-  let password = req.body.password;
-  if (!email || !password || checkEmail(req.body.email, users)) {
-
+  if (!req.body.email || !req.body.password || checkEmail(req.body.email, users)) {
     res.sendStatus(400);
-
   } else {
-
     const userID = generateRandomString();
     users[userID] = {
       id: userID,
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password , saltRounds)
     };
-
-    console.log(users);
-    req.session.user_id = userID;
+    //console.log(users);
+    req.session.userID = userID;
     res.redirect('/urls');
   }
 });
 
-/*
-GET /login & GET /register - if user is logged in: (Minor) redirects to /urls -> user is able to access these pages while logged in with no redirect
-*/
 // Create a GET /login endpoint, which returns the login template
 app.get('/login', (req, res) => {
-  /*
-  const user = req.session.user_id
-  if (!user) {
-    res.render ('urls_login');
-  } else { 
-    res.redirect ('/urls');
-  }
-  */
- let templateVars = {
-  user: users[req.session.user_id]
-};
-res.render('urls_login', templateVars);
+  let templateVars = {
+    user: users[req.session.userID]
+  };
+  res.render('urls_login', templateVars);
 });
 
 // Create a GET /register endpoint, which returns the register template you just created
 app.get('/register', (req, res) => {
-  /*
-  if (!req.session.user_id) {
-    res.render ('urls_register');
-  } else {
-    res.redirect('/urls');
-  }
-  */
- let templateVars = {
-  user: users[req.session.user_id]
-};
-
-res.render('urls_register', templateVars);
-
+  let templateVars = {
+    user: users[req.session.userID]
+  };
+  res.render('urls_register', templateVars);
 });
 
 // an endpoint to handle a POST to /logout in your Express server*
@@ -184,23 +140,17 @@ app.post('/logout', (req, res) => {
   res.redirect('/login');
 });
 
-//MISSING-GET /urls - after a user saves a new url and returns to this page, it is empty and doesn't show their new url
-
-
 // Render information about a single URL
-/*
-GET /urls/:id - if a URL for the given ID does not exist: (Minor) returns HTML with a relevant error message -> user is shown the express error page with message TypeError: Cannot read property 'longURL' of undefined
-*/
 app.get('/urls/:shortURL', (req, res) => {
 
-  if (!req.session.user_id) {
-    res.redirect('/login')
+  if (!req.session.userID) {
+    res.redirect('/login');
   } else {
     let templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
-      id: urlDatabase[req.params.shortURL]['userID'],
-      user: users[req.session.user_id]
+      id: urlDatabase[req.params.shortURL].userID,
+      user: users[req.session.userID]
     };
 
     res.render('urls_show', templateVars);
@@ -209,22 +159,15 @@ app.get('/urls/:shortURL', (req, res) => {
 });
 
 // route handler for Redirecting any request to '/u/:shortURL' to its longURL
-/*
-GET /urls/:id - if a URL for the given ID does not exist: (Minor) returns HTML with a relevant error message -> user is shown the express error page with message TypeError: Cannot read property 'longURL' of undefined
-GET /u/:id - same as above
-*/
 app.get('/u/:shortURL', (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
 // route handler for generating a shortURL and adding that to the urlDatabase
-/*
-POST /urls - if user is not logged in: (Minor) returns HTML with a relevant error message -> user is given express error page with message 'TypeError: Cannot read property 'id' of undefined'
-*/
 app.post('/urls', (req, res) => {
 
-  if (!req.session.user_id) {
+  if (!req.session.userID) {
     res.redirect('/login');
   } else {
   
@@ -232,7 +175,7 @@ app.post('/urls', (req, res) => {
     let shortURL = generateRandomString();
     urlDatabase[shortURL] = {
       longURL: req.body.longURL,
-      userID: users[req.session.user_id]['id']
+      userID: users[req.session.userID].id
     };
     res.redirect(`/urls/${shortURL}`);
   }
@@ -240,48 +183,71 @@ app.post('/urls', (req, res) => {
 
 // route handler GET that removes a URL resource
 app.get('/urls/:shortUrl/delete', (req, res) => {
-  res.render('urls_index');
-});
+  //filter the urls of the user
+  let userUrlDB = {};
+  for (let shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === req.session.userID) {
+      userUrlDB[shortURL] = urlDatabase[shortURL];
+    }
+  }
 
-// route handler POST that removes a URL resource
-/*
-POST /urls/:id/delete - user is unable to delete urls because GET /urls is always empty and doesn't show their urls
-*/
-app.post('/urls/:shortURL/delete', (req, res) => {
-
-  if (urlDatabase[req.params.shortURL].userID === req.session.user_id) {
-
-    delete urlDatabase[req.params.shortURL];
-    res.redirect('/urls');
-
+  if (userUrlDB[req.params.shortURL]) {
+    res.render('urls_index');
   } else {
-    res.redirect('/login');
+    res.send('<html><body><h2>Access forbidden</h2></body></html>');
   }
   
 });
 
-// route handler POST that updates a URL resource
-app.get('/urls/:shortURL/edit', (req, res) => {
-  const userID = req.session.user_id;
+// route handler POST that removes a URL resource
+app.post('/urls/:shortURL/delete', (req, res) => {
 
-  let templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    user: users[userID]
-  };
-
-  res.redirect('/urls', templateVars);
+  if (req.session.userID) {
+    //filter the urls of the user
+    let userUrlDB = {};
+    for (let shortURL in urlDatabase) {
+      if (urlDatabase[shortURL].userID === req.session.userID) {
+        userUrlDB[shortURL] = urlDatabase[shortURL];
+      }
+    }
+    userUrlDB[req.params.shortURL].longURL = req.body.longURL;
+    delete urlDatabase[req.params.shortURL];
+    res.redirect('/urls');
+  } else {
+    res.send('<html><body><h2>Access forbidden</h2></body></html>');
+  }
 });
 
-app.post('/urls/:shortURL/edit', (req, res) => {
+// route handler POST that updates a URL resource
+app.get('/urls/:shortURL/edit', (req, res) => {
+  let shortURL = req.params.shortURL;
+  //filter the urls of the user
+  let userUrlDB = {};
+  for (let shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === req.session.userID) {
+      userUrlDB[shortURL] = urlDatabase[shortURL];
+    }
+  }
 
-  if (urlDatabase[req.params.shortURL].userID === req.session.user_id) {
-    urlDatabase[req.params.shortURL] = {
-      longURL: urlDatabase[req.params.shortURL].longURL, 
-      userID: req.session.user_id
-    };
+  if (userUrlDB[req.params.shortURL]) {
+    res.redirect(`/urls/${shortURL}`);
+  } else {
+    res.send('<html><body><h2>Access forbidden</h2></body></html>');
+  }
+});
+
+app.post('/urls/:shortURL', (req, res) => {
+
+  if (req.session.userID) {
+    //filter the urls of the user
+    let userUrlDB = {};
+    for (let shortURL in urlDatabase) {
+      if (urlDatabase[shortURL].userID === req.session.userID) {
+        userUrlDB[shortURL] = urlDatabase[shortURL];
+      }
+    }
+    userUrlDB[req.params.shortURL].longURL = req.body.longURL;
     res.redirect('/urls');
-
   } else {
     res.send('<html><body><h2>Access forbidden</h2></body></html>');
   }
